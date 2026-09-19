@@ -1,0 +1,188 @@
+QUANTORA-AI/
+│
+├── frontend/
+│   │
+│   ├── public/
+│   │   ├── images/
+│   │   ├── icons/
+│   │   └── favicon.ico
+│   │
+│   ├── src/
+│   │   ├── assets/
+│   │   │
+│   │   ├── components/
+│   │   │   ├── common/
+│   │   │   ├── layout/
+│   │   │   ├── chat/
+│   │   │   ├── agents/
+│   │   │   ├── files/
+│   │   │   └── ui/
+│   │   │
+│   │   ├── pages/
+│   │   │   ├── Home/
+│   │   │   ├── Login/
+│   │   │   ├── Register/
+│   │   │   ├── Dashboard/
+│   │   │   ├── Chat/
+│   │   │   ├── Agents/
+│   │   │   ├── Files/
+│   │   │   ├── Settings/
+│   │   │   └── Profile/
+│   │   │
+│   │   ├── services/
+│   │   │   ├── api.ts
+│   │   │   ├── authService.ts
+│   │   │   ├── chatService.ts
+│   │   │   ├── agentService.ts
+│   │   │   └── fileService.ts
+│   │   │
+│   │   ├── hooks/
+│   │   ├── contexts/
+│   │   ├── types/
+│   │   ├── utils/
+│   │   ├── config/
+│   │   ├── App.tsx
+│   │   └── main.tsx
+│   │
+│   ├── .env
+│   ├── .env.example
+│   ├── package.json
+│   ├── vite.config.ts
+│   ├── tsconfig.json
+│   └── README.md
+│
+│
+├── backend/
+│   │
+│   ├── app/
+│   │   ├── __init__.py
+│   │   ├── main.py
+│   │   │
+│   │   ├── api/
+│   │   │   ├── __init__.py
+│   │   │   └── routes/
+│   │   │       ├── __init__.py
+│   │   │       ├── health.py
+│   │   │       ├── auth.py
+│   │   │       ├── chat.py
+│   │   │       ├── agents.py
+│   │   │       ├── files.py
+│   │   │       └── tools.py
+│   │   │
+│   │   ├── core/
+│   │   │   ├── __init__.py
+│   │   │   ├── config.py
+│   │   │   ├── security.py
+│   │   │   └── logging_config.py
+│   │   │
+│   │   ├── schemas/
+│   │   │   ├── __init__.py
+│   │   │   ├── auth.py
+│   │   │   ├── chat.py
+│   │   │   ├── agent.py
+│   │   │   ├── file.py
+│   │   │   └── common.py
+│   │   │
+│   │   ├── services/
+│   │   │   ├── __init__.py
+│   │   │   ├── ai_service.py
+│   │   │   ├── agent_service.py
+│   │   │   ├── chat_service.py
+│   │   │   ├── file_service.py
+│   │   │   └── tool_service.py
+│   │   │
+│   │   ├── repositories/
+│   │   │   ├── __init__.py
+│   │   │   └── README.md
+│   │   │
+│   │   └── utils/
+│   │       ├── __init__.py
+│   │       └── helpers.py
+│   │
+│   ├── tests/
+│   │   ├── __init__.py
+│   │   ├── test_health.py
+│   │   ├── test_auth.py
+│   │   ├── test_chat.py
+│   │   ├── test_agents.py
+│   │   └── test_files.py
+│   │
+│   ├── uploads/
+│   │   └── .gitkeep
+│   │
+│   ├── .env
+│   ├── .env.example
+│   ├── .gitignore
+│   ├── requirements.txt
+│   ├── run.py
+│   └── README.md
+│
+│
+├── ai/
+│   │
+│   ├── prompts/
+│   │   ├── system/
+│   │   │   ├── general.txt
+│   │   │   ├── research.txt
+│   │   │   ├── coding.txt
+│   │   │   ├── data_analysis.txt
+│   │   │   └── document_analysis.txt
+│   │   │
+│   │   └── templates/
+│   │
+│   ├── agents/
+│   │   ├── general_agent.py
+│   │   ├── research_agent.py
+│   │   ├── coding_agent.py
+│   │   ├── data_analysis_agent.py
+│   │   └── document_agent.py
+│   │
+│   ├── tools/
+│   │   ├── calculator.py
+│   │   ├── summarizer.py
+│   │   ├── document_reader.py
+│   │   └── web_search.py
+│   │
+│   ├── memory/
+│   │   └── memory_manager.py
+│   │
+│   ├── rag/
+│   │   ├── chunker.py
+│   │   ├── embeddings.py
+│   │   ├── retriever.py
+│   │   └── pipeline.py
+│   │
+│   └── README.md
+│
+│
+├── database/
+│   │
+│   └── README.md
+│
+│
+├── docs/
+│   │
+│   ├── architecture/
+│   │   ├── system-architecture.md
+│   │   ├── backend-architecture.md
+│   │   └── frontend-architecture.md
+│   │
+│   ├── api/
+│   │   └── api-documentation.md
+│   │
+│   ├── development/
+│   │   ├── setup.md
+│   │   └── contributing.md
+│   │
+│   └── deployment/
+│       └── deployment.md
+│
+│
+├── scripts/
+│   ├── setup.py
+│   └── health_check.py
+│
+│
+├── .gitignore
+├── README.md
+└── LICENSE

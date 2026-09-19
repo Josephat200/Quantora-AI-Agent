@@ -23,6 +23,7 @@ import {
   UploadCloud,
   Zap,
 } from 'lucide-react';
+import { api, type ApiConversation } from './services/api';
 
 type View = 'landing' | 'signin' | 'register' | 'chat' | 'files' | 'settings';
 type Role = 'user' | 'assistant';
@@ -137,26 +138,38 @@ function Landing({ go }: { go: (view: View) => void }) {
   );
 }
 
-function Auth({ mode, go, onSuccess }: { mode: 'signin' | 'register'; go: (view: View) => void; onSuccess: (name: string) => void }) {
+function Auth({ mode, go, onSuccess }: { mode: 'signin' | 'register'; go: (view: View) => void; onSuccess: (name: string, token: string) => void }) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const [providerLoading, setProviderLoading] = useState<'Google' | 'GitHub' | ''>('');
-  const submit = (event: FormEvent) => {
+  const submit = async (event: FormEvent) => {
     event.preventDefault();
     if (mode === 'register' && name.trim().length < 2) return setError('Tell us your name to create a workspace.');
     if (!email.includes('@')) return setError('Enter a valid email address.');
     if (password.length < 6) return setError('Use at least 6 characters for your password.');
-    onSuccess(mode === 'register' ? name.trim() : email.split('@')[0]);
+    setError('');
+    setLoading(true);
+    try {
+      const response = mode === 'register'
+        ? await api.register({ full_name: name.trim(), email, password })
+        : await api.login({ email, password });
+      onSuccess(response.user.full_name || response.user.email.split('@')[0], response.access_token);
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : 'Unable to authenticate right now.');
+    } finally {
+      setLoading(false);
+    }
   };
   const continueWithProvider = (provider: 'Google' | 'GitHub') => {
     setError('');
     setProviderLoading(provider);
     window.setTimeout(() => {
       setProviderLoading('');
-      onSuccess(provider === 'Google' ? 'Google member' : 'GitHub member');
-    }, 650);
+      setError(`${provider} sign-in is not configured yet. Use email authentication for this workspace.`);
+    }, 300);
   };
   return (
     <div className="auth-screen noise">
@@ -181,12 +194,12 @@ function Auth({ mode, go, onSuccess }: { mode: 'signin' | 'register'; go: (view:
              </button>
            </div>
            <div className="auth-divider"><span>or continue with email</span></div>
-          <form onSubmit={submit} noValidate>
+           <form onSubmit={submit} noValidate>
             {mode === 'register' && <div className="form-field"><label htmlFor="auth-name">Your name</label><input id="auth-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="How should we call you?" data-testid="input-name" /></div>}
             <div className="form-field"><label htmlFor="auth-email">Email address</label><input id="auth-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@company.com" data-testid="input-email" /></div>
             <div className="form-field"><label htmlFor="auth-password">Password</label><input id="auth-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="At least 6 characters" data-testid="input-password" /></div>
             {error && <div className="form-error" data-testid="status-auth-error">{error}</div>}
-             <button className="solid-button form-submit" type="submit" disabled={Boolean(providerLoading)} data-testid="button-auth-submit">{mode === 'register' ? 'Sign up with email' : 'Sign in with email'} <ArrowRight size={14} /></button>
+              <button className="solid-button form-submit" type="submit" disabled={Boolean(providerLoading) || loading} data-testid="button-auth-submit">{loading ? 'Connecting…' : mode === 'register' ? 'Sign up with email' : 'Sign in with email'} {!loading && <ArrowRight size={14} />}</button>
           </form>
            <p className="auth-provider-note">Frontend demo mode: provider handoffs are simulated locally.</p>
           <div className="auth-switch">{mode === 'register' ? 'Already have an account?' : 'New to Quantora?'}<button onClick={() => go(mode === 'register' ? 'signin' : 'register')} data-testid="button-auth-switch">{mode === 'register' ? 'Sign in' : 'Create one'}</button></div>
@@ -257,6 +270,20 @@ function SettingsView({ user, setUser, theme, setTheme, onLogout }: { user: stri
   return <div className="workspace-content"><div className="page-heading"><div><div className="eyebrow">Workspace preferences</div><h1>Settings</h1><p>Make Quantora fit the way you think.</p></div></div><div className="settings-layout"><div className="settings-tabs"><button className="settings-tab active" data-testid="settings-tab-general">General</button><button className="settings-tab" onClick={() => setSmartContext(!smartContext)} data-testid="settings-tab-context">Context & privacy</button><button className="settings-tab" onClick={onLogout} data-testid="settings-tab-logout">Sign out</button></div><div><section className="settings-section"><h2>Profile</h2><p>This is how your workspace identifies you in a conversation.</p><form onSubmit={save}><div className="form-field"><label htmlFor="settings-name">Display name</label><input id="settings-name" value={name} onChange={(e) => setName(e.target.value)} data-testid="input-settings-name" /></div><div className="form-field"><label htmlFor="settings-email">Email address</label><input id="settings-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} data-testid="input-settings-email" /></div><div className="save-row"><button className="solid-button" type="submit" data-testid="button-save-settings">Save changes</button>{saved && <span className="saved-note" data-testid="status-settings-saved">Saved just now</span>}</div></form></section><section className="settings-section"><h2>Workspace</h2><p>Small controls for the way Quantora shows up.</p><div className="settings-row"><div><strong>Appearance</strong><span>Choose the atmosphere for your workspace.</span></div><button className="toggle on" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} aria-label="Toggle theme" data-testid="toggle-theme"><Sun size={13} color="hsl(var(--cyan))" style={{ position: 'absolute', right: 5, top: 5 }} /></button></div><div className="settings-row"><div><strong>Use file context automatically</strong><span>Let relevant files inform new conversations.</span></div><button className={`toggle ${smartContext ? 'on' : ''}`} onClick={() => setSmartContext(!smartContext)} aria-label="Toggle file context" data-testid="toggle-file-context" /></div><div className="settings-row"><div><strong>Response style</strong><span>How Quantora should shape its first pass.</span></div><select className="select" defaultValue="considered" data-testid="select-response-style"><option value="considered">Considered</option><option value="direct">Direct</option><option value="exploratory">Exploratory</option></select></div></section><section className="settings-section"><h2>About your workspace</h2><p>Quantora is a focused space for intelligence, context, and action. Your prototype data is stored locally in this browser.</p><button className="ghost-button" onClick={() => { localStorage.clear(); window.location.reload(); }} data-testid="button-reset-workspace">Reset local workspace <RotateCcw size={13} /></button></section></div></div></div>;
 }
 
+function mapConversation(conversation: ApiConversation): Conversation {
+  return {
+    id: conversation.id,
+    title: conversation.title,
+    updated: new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric' }).format(new Date(conversation.updated_at)),
+    messages: conversation.messages.map((message) => ({
+      id: message.id,
+      role: message.role,
+      text: message.content,
+      time: new Intl.DateTimeFormat('en', { hour: 'numeric', minute: '2-digit' }).format(new Date(message.created_at)),
+    })),
+  };
+}
+
 function Workspace({ user, setUser, logout }: { user: string; setUser: (name: string) => void; logout: () => void }) {
   const [view, setView] = useState<View>('chat');
   const [theme, setTheme] = useState<'dark' | 'light'>(readStorage<'dark' | 'light'>('quantora-theme', 'dark'));
@@ -264,9 +291,22 @@ function Workspace({ user, setUser, logout }: { user: string; setUser: (name: st
   const [files, setFiles] = useState<StoredFile[]>(readStorage('quantora-files', seedFiles));
   const [selectedId, setSelectedId] = useState(conversations[0]?.id || 'new');
   const [loading, setLoading] = useState(false);
+  const [syncError, setSyncError] = useState('');
   useEffect(() => { document.documentElement.classList.toggle('light', theme === 'light'); localStorage.setItem('quantora-theme', theme); }, [theme]);
   useEffect(() => { localStorage.setItem('quantora-conversations', JSON.stringify(conversations)); }, [conversations]);
   useEffect(() => { localStorage.setItem('quantora-files', JSON.stringify(files)); }, [files]);
+  useEffect(() => {
+    if (!localStorage.getItem('quantora-token')) return;
+    api.conversations()
+      .then((remote) => {
+        if (remote.length) {
+          const mapped = remote.map(mapConversation);
+          setConversations(mapped);
+          setSelectedId(mapped[0].id);
+        }
+      })
+      .catch((error) => setSyncError(error instanceof Error ? error.message : 'Unable to load conversations.'));
+  }, []);
   const current = conversations.find((conversation) => conversation.id === selectedId) || { id: 'new', title: 'New conversation', updated: 'Now', messages: [] };
   const newConversation = () => {
     const fresh: Conversation = { id: makeId(), title: 'New conversation', updated: 'Now', messages: [] };
@@ -282,30 +322,56 @@ function Workspace({ user, setUser, logout }: { user: string; setUser: (name: st
       if (!found) return [{ id, title, updated: 'Now', messages: [message] }, ...all];
       return all.map((item) => item.id === id ? { ...item, title: item.title === 'New conversation' ? title : item.title, updated: 'Now', messages: [...item.messages, message] } : item);
     });
-    setLoading(true);
-    window.setTimeout(() => {
-      const answer = text.toLowerCase().includes('plan') ? 'Here’s a useful first pass: name the outcome, gather the three pieces of context that change the decision, then choose the smallest next move. I can help you turn each part into something concrete.' : 'That’s a useful thread to pull. I’d start by separating the signal from the noise, then turn the clearest observation into one small action. Want to add more context?';
-      setConversations((all) => all.map((item) => item.id === id ? { ...item, messages: [...item.messages, { id: makeId(), role: 'assistant', text: answer, time: nowLabel() }] } : item));
-      setLoading(false);
-    }, 1100);
+     setLoading(true);
+     setSyncError('');
+     const isLocalSeed = ['welcome', 'briefing', 'research'].includes(id);
+     api.sendMessage({ message: text, ...(isLocalSeed ? {} : { conversation_id: id }) })
+       .then((response) => {
+         const answer = { id: makeId(), role: 'assistant' as const, text: response.message, time: nowLabel() };
+         setSelectedId(response.conversation_id);
+         setConversations((all) => {
+           const existing = all.find((item) => item.id === id);
+           const next = { ...(existing ?? { id, title, updated: 'Now', messages: [message] }), id: response.conversation_id, updated: 'Now', messages: [...(existing?.messages ?? [message]), answer] };
+           return [next, ...all.filter((item) => item.id !== id && item.id !== response.conversation_id)];
+         });
+       })
+       .catch((error) => {
+         const answer = { id: makeId(), role: 'assistant' as const, text: error instanceof Error ? error.message : 'The request could not be completed.', time: nowLabel() };
+         setSyncError(answer.text);
+         setConversations((all) => all.map((item) => item.id === id ? { ...item, messages: [...item.messages, answer] } : item));
+       })
+       .finally(() => setLoading(false));
   };
-  const addFiles = (event: ChangeEvent<HTMLInputElement>) => {
+  const addFiles = async (event: ChangeEvent<HTMLInputElement>) => {
     const incoming = Array.from(event.target.files || []).map((file) => ({ id: makeId(), name: file.name, size: `${Math.max(1, Math.round(file.size / 1024))} KB`, type: file.name.split('.').pop()?.toUpperCase() || 'FILE', status: 'processing' as const, added: 'Added just now' }));
     if (!incoming.length) return;
     setFiles((all) => [...incoming, ...all]);
-    incoming.forEach((file) => window.setTimeout(() => setFiles((all) => all.map((item) => item.id === file.id ? { ...item, status: 'ready' } : item)), 1600));
+    const selectedFiles = Array.from(event.target.files || []);
+    await Promise.all(selectedFiles.map(async (selectedFile, index) => {
+      const localFile = incoming[index];
+      try {
+        const uploaded = await api.upload(selectedFile);
+        setFiles((all) => all.map((item) => item.id === localFile.id ? { ...item, id: uploaded.file_id, size: `${Math.max(1, Math.round(uploaded.size / 1024))} KB`, type: selectedFile.name.split('.').pop()?.toUpperCase() || item.type, status: 'ready' } : item));
+      } catch (error) {
+        setSyncError(error instanceof Error ? error.message : `Unable to upload ${selectedFile.name}.`);
+        setFiles((all) => all.filter((item) => item.id !== localFile.id));
+      }
+    }));
     event.target.value = '';
   };
-  const deleteFile = (id: string) => setFiles((all) => all.filter((file) => file.id !== id));
-  return <div className="workspace noise"><Sidebar view={view} setView={setView} conversations={conversations} selectedId={selectedId} newConversation={newConversation} selectConversation={setSelectedId} logout={logout} user={user} /><main className="workspace-main"><header className="workspace-header"><div className="workspace-title"><span className="status-dot" /><h1>{view === 'chat' ? current.title : view === 'files' ? 'Files' : 'Settings'}</h1></div><div className="header-actions"><button className="icon-button hide-mobile" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} aria-label="Toggle theme" data-testid="button-header-theme">{theme === 'dark' ? <Sun size={15} /> : <Sparkles size={15} />}</button><button className="icon-button hide-mobile" onClick={() => setView('settings')} aria-label="Open settings" data-testid="button-header-settings"><Settings size={15} /></button></div></header>{view === 'chat' && <ChatView conversation={current} onSend={sendMessage} loading={loading} onNew={newConversation} />}{view === 'files' && <FilesView files={files} addFiles={addFiles} deleteFile={deleteFile} />}{view === 'settings' && <SettingsView user={user} setUser={setUser} theme={theme} setTheme={setTheme} onLogout={logout} />}</main></div>;
+  const deleteFile = (id: string) => {
+    api.deleteFile(id).catch(() => undefined);
+    setFiles((all) => all.filter((file) => file.id !== id));
+  };
+  return <div className="workspace noise"><Sidebar view={view} setView={setView} conversations={conversations} selectedId={selectedId} newConversation={newConversation} selectConversation={setSelectedId} logout={logout} user={user} /><main className="workspace-main"><header className="workspace-header"><div className="workspace-title"><span className="status-dot" /><h1>{view === 'chat' ? current.title : view === 'files' ? 'Files' : 'Settings'}</h1></div><div className="header-actions"><button className="icon-button hide-mobile" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} aria-label="Toggle theme" data-testid="button-header-theme">{theme === 'dark' ? <Sun size={15} /> : <Sparkles size={15} />}</button><button className="icon-button hide-mobile" onClick={() => setView('settings')} aria-label="Open settings" data-testid="button-header-settings"><Settings size={15} /></button></div></header>{syncError && <div className="workspace-alert" role="status">{syncError}</div>}{view === 'chat' && <ChatView conversation={current} onSend={sendMessage} loading={loading} onNew={newConversation} />}{view === 'files' && <FilesView files={files} addFiles={addFiles} deleteFile={deleteFile} />}{view === 'settings' && <SettingsView user={user} setUser={setUser} theme={theme} setTheme={setTheme} onLogout={logout} />}</main></div>;
 }
 
 function App() {
   const [view, setView] = useState<View>(() => readStorage<View>('quantora-view', 'landing'));
   const [user, setUser] = useState(() => readStorage('quantora-user', 'Maya Chen'));
   useEffect(() => { localStorage.setItem('quantora-view', view); }, [view]);
-  const login = (name: string) => { setUser(name); localStorage.setItem('quantora-user', name); setView('chat'); };
-  const logout = () => { setView('landing'); localStorage.removeItem('quantora-view'); };
+  const login = (name: string, token: string) => { setUser(name); localStorage.setItem('quantora-user', name); localStorage.setItem('quantora-token', token); setView('chat'); };
+  const logout = () => { setView('landing'); localStorage.removeItem('quantora-view'); localStorage.removeItem('quantora-token'); };
   if (view === 'landing') return <Landing go={setView} />;
   if (view === 'signin' || view === 'register') return <Auth mode={view} go={setView} onSuccess={login} />;
   return <Workspace user={user} setUser={(name) => { setUser(name); localStorage.setItem('quantora-user', name); }} logout={logout} />;

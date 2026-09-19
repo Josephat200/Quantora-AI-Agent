@@ -1,45 +1,55 @@
-# [Project name]
+# Quantora AI
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+Quantora is a focused AI workspace for conversations, documents, and useful next steps.
 
 ## Run & Operate
 
-- `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
+- `pnpm --filter @workspace/quantora-frontend run dev` — run the Vite frontend
+- `pnpm --filter @workspace/api-server run dev` — run the API server
 - `pnpm run typecheck` — full typecheck across all packages
-- `pnpm run build` — typecheck + build all packages
-- `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
-- `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- Required env: `DATABASE_URL` — Postgres connection string
+- `PORT=5173 BASE_PATH=/ pnpm --filter @workspace/quantora-frontend run build` — production frontend build
+- API defaults: `PORT` is supplied by the workflow, with `FRONTEND_URL=http://localhost:5173`
+- Optional AI env: `AI_API_KEY`, `AI_BASE_URL`, `AI_MODEL`
 
 ## Stack
 
 - pnpm workspaces, Node.js 24, TypeScript 5.9
-- API: Express 5
-- DB: PostgreSQL + Drizzle ORM
-- Validation: Zod (`zod/v4`), `drizzle-zod`
-- API codegen: Orval (from OpenAPI spec)
-- Build: esbuild (CJS bundle)
+- API: Express 5 + esbuild
+- Frontend: React 19 + Vite + TypeScript
+- Database: intentionally not connected; the existing `lib/db` package is left untouched
+- Authentication: signed bearer tokens and scrypt password hashes
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `artifacts/quantora-frontend/src/App.tsx` — primary workspace UI and user flows
+- `artifacts/quantora-frontend/src/services/api.ts` — frontend API client
+- `artifacts/api-server/src/routes/` — backend HTTP surface
+- `artifacts/api-server/src/services/` — AI and tool logic
+- `artifacts/api-server/src/lib/stores.ts` — temporary stores, intentionally not a database
+- `artifacts/api-server/.env.example` — backend configuration template
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- The imported TypeScript/Express stack is preserved rather than introducing a second Python backend.
+- Authentication, conversations, and file metadata are temporary in-memory stores until the database is intentionally added.
+- AI responses are never mocked; missing provider configuration returns a clear API error.
+- Uploaded files are validated and stored temporarily under the API artifact's `uploads` directory.
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+- Landing, sign-in, registration, chat, files, settings, theme switching, and responsive navigation are available.
+- Email auth is connected to the API. Google/GitHub buttons explain that provider configuration is not present.
+- Chat and agents use an OpenAI-compatible provider when configured.
 
 ## User preferences
 
-_Populate as you build — explicit user instructions worth remembering across sessions._
+- Leave the database layer alone until the user explicitly requests database work.
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
+- Chat and agent execution need `AI_API_KEY`, `AI_BASE_URL`, and `AI_MODEL`; health and auth do not.
+- In-memory state is cleared when the API restarts.
 
 ## Pointers
 
-- See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details
+- See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details.

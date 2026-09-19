@@ -1,0 +1,637 @@
+You are building the BACKEND ONLY for my existing application called QUANTORA AI.
+
+IMPORTANT:
+
+* The frontend already exists and must NOT be modified.
+* Build ONLY the backend.
+* Do NOT create, configure, migrate, seed, or connect to any database.
+* Leave the database completely out of the implementation for now.
+* However, design the architecture so a PostgreSQL/Supabase database can be added later without rewriting the backend.
+* Do not create fake database functionality.
+* Do not use SQLite as a temporary database.
+* Do not replace the database with JSON files.
+* Do not store persistent application data in files.
+* Use clean production-style architecture.
+* Generate all required files.
+* Make the application runnable immediately after installation.
+* Do not leave TODOs for core backend functionality.
+* Do not modify my existing frontend.
+
+PROJECT NAME:
+Quantora AI
+
+PURPOSE:
+Quantora AI is an AI agent platform. The backend will provide APIs for the existing frontend and will later support AI conversations, agent execution, document processing, tool calling, authentication, memory, and knowledge retrieval.
+
+TECHNOLOGY:
+
+* Python 3.13
+* FastAPI
+* Uvicorn
+* Pydantic
+* pydantic-settings
+* python-dotenv
+* httpx
+* PyJWT
+* passlib with bcrypt
+* python-multipart
+* OpenAI-compatible API client
+* pytest
+* pytest-asyncio
+
+BACKEND ARCHITECTURE:
+
+backend/
+│
+├── app/
+│   ├── **init**.py
+│   ├── main.py
+│   │
+│   ├── core/
+│   │   ├── **init**.py
+│   │   ├── config.py
+│   │   ├── security.py
+│   │   └── logging_config.py
+│   │
+│   ├── api/
+│   │   ├── **init**.py
+│   │   └── routes/
+│   │       ├── **init**.py
+│   │       ├── health.py
+│   │       ├── auth.py
+│   │       ├── chat.py
+│   │       ├── agents.py
+│   │       ├── files.py
+│   │       └── tools.py
+│   │
+│   ├── schemas/
+│   │   ├── **init**.py
+│   │   ├── auth.py
+│   │   ├── chat.py
+│   │   ├── agent.py
+│   │   ├── file.py
+│   │   └── common.py
+│   │
+│   ├── services/
+│   │   ├── **init**.py
+│   │   ├── ai_service.py
+│   │   ├── agent_service.py
+│   │   ├── chat_service.py
+│   │   ├── file_service.py
+│   │   └── tool_service.py
+│   │
+│   ├── repositories/
+│   │   ├── **init**.py
+│   │   └── README.md
+│   │
+│   └── utils/
+│       ├── **init**.py
+│       └── helpers.py
+│
+├── tests/
+│   ├── **init**.py
+│   ├── test_health.py
+│   └── test_api.py
+│
+├── uploads/
+│   └── .gitkeep
+│
+├── .env.example
+├── .gitignore
+├── requirements.txt
+├── README.md
+└── run.py
+
+GENERAL RULES:
+
+1. Use async FastAPI endpoints where appropriate.
+2. Use Pydantic models for request and response validation.
+3. Use dependency injection where appropriate.
+4. Keep routers thin.
+5. Put business logic inside services.
+6. Keep database access completely absent.
+7. Create repository interfaces/placeholders only where useful for future database integration.
+8. Do not import SQLAlchemy.
+9. Do not import SQLModel.
+10. Do not import psycopg.
+11. Do not import asyncpg.
+12. Do not import supabase.
+13. Do not create database tables.
+14. Do not create database migrations.
+15. Do not create database schemas.
+16. Do not create database connection strings.
+17. Do not create a DATABASE_URL requirement.
+18. The application must start without a database.
+
+CONFIGURATION:
+
+Create a settings system using pydantic-settings.
+
+Environment variables should include:
+
+APP_NAME=Quantora AI
+APP_VERSION=1.0.0
+ENVIRONMENT=development
+DEBUG=true
+API_PREFIX=/api/v1
+FRONTEND_URL=http://localhost:5173
+
+JWT_SECRET_KEY=change-this-in-production
+JWT_ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=60
+
+AI_API_KEY=
+AI_MODEL=
+AI_BASE_URL=
+
+MAX_UPLOAD_SIZE_MB=10
+
+Do not require AI_API_KEY for the health endpoint or application startup.
+
+CORS:
+
+Configure CORS for the existing frontend.
+
+Allow:
+
+* http://localhost:5173
+* http://localhost:3000
+
+Also make the frontend URL configurable through FRONTEND_URL.
+
+HEALTH API:
+
+Create:
+
+GET /api/v1/health
+
+Response:
+
+{
+"status": "healthy",
+"service": "Quantora AI",
+"version": "1.0.0"
+}
+
+Create:
+
+GET /api/v1/health/ready
+
+Response should indicate that the backend is ready.
+
+Do not check a database because there is no database.
+
+AUTHENTICATION:
+
+Implement the authentication architecture without database persistence.
+
+Create endpoints:
+
+POST /api/v1/auth/register
+POST /api/v1/auth/login
+GET /api/v1/auth/me
+
+IMPORTANT:
+Because there is no database, do not pretend users are persisted permanently.
+
+For this prototype:
+
+* Use an in-memory user store only for development.
+* Clearly isolate this implementation in the authentication service.
+* Make it easy to replace later with a database repository.
+* Never claim that the in-memory user store is production-ready.
+
+User fields:
+
+* id
+* email
+* full_name
+* hashed_password
+* is_active
+
+Use JWT access tokens.
+
+Use secure password hashing.
+
+AUTH RESPONSE:
+
+{
+"access_token": "...",
+"token_type": "bearer"
+}
+
+Do not return hashed passwords.
+
+CHAT API:
+
+Create:
+
+POST /api/v1/chat
+
+Request:
+
+{
+"message": "string",
+"conversation_id": null,
+"model": null
+}
+
+Response:
+
+{
+"message": "string",
+"conversation_id": "string",
+"model": "string"
+}
+
+Create:
+
+GET /api/v1/chat/conversations
+
+Because there is no database, use an in-memory temporary conversation store.
+
+Clearly isolate this temporary storage so it can later be replaced with PostgreSQL/Supabase.
+
+Create:
+
+GET /api/v1/chat/conversations/{conversation_id}
+
+Create:
+
+DELETE /api/v1/chat/conversations/{conversation_id}
+
+AI SERVICE:
+
+Create an AI service abstraction.
+
+The service must:
+
+* receive a user message
+* prepare the conversation context
+* call the configured LLM API
+* return the AI response
+
+Use an OpenAI-compatible HTTP client/API design.
+
+Do not hard-code API keys.
+
+Read:
+AI_API_KEY
+AI_MODEL
+AI_BASE_URL
+
+from environment variables.
+
+If AI_API_KEY is missing:
+
+* Do not crash the entire application.
+* Return a clear API error when an AI request is attempted.
+* Health endpoints must still work.
+
+Create a clean interface so another LLM provider can later be added.
+
+AGENT API:
+
+Create:
+
+POST /api/v1/agents/run
+
+Request:
+
+{
+"task": "string",
+"agent_type": "general"
+}
+
+Response:
+
+{
+"task": "string",
+"agent_type": "general",
+"result": "string"
+}
+
+Create:
+
+GET /api/v1/agents
+
+Return the available agent types.
+
+Initially support:
+
+* general
+* research
+* coding
+* data_analysis
+* document_analysis
+
+Do not create fake complex autonomous behavior.
+
+For now, route the task through the AI service with appropriate system instructions for the selected agent type.
+
+AGENT SYSTEM PROMPTS:
+
+general:
+"You are Quantora AI, a general-purpose AI assistant. Provide accurate, useful and clearly structured responses."
+
+research:
+"You are Quantora AI Research Agent. Analyze research tasks carefully, distinguish facts from assumptions, and provide structured findings."
+
+coding:
+"You are Quantora AI Coding Agent. Help users understand, design, debug and improve software systems. Provide safe and maintainable solutions."
+
+data_analysis:
+"You are Quantora AI Data Analysis Agent. Analyze datasets and explain findings clearly. Distinguish observations from assumptions."
+
+document_analysis:
+"You are Quantora AI Document Analysis Agent. Analyze supplied document content and provide accurate structured summaries and insights."
+
+FILE API:
+
+Create:
+
+POST /api/v1/files/upload
+
+Support multipart file uploads.
+
+For the initial backend:
+
+* accept common document formats
+* validate file type
+* validate file size
+* store uploaded files temporarily in the uploads/ directory
+* generate a unique file identifier
+* return metadata
+
+Do not create database records.
+
+Do not implement permanent cloud storage.
+
+Return:
+
+{
+"file_id": "string",
+"filename": "string",
+"content_type": "string",
+"size": 0
+}
+
+Create:
+
+GET /api/v1/files/{file_id}
+
+Create:
+
+DELETE /api/v1/files/{file_id}
+
+Supported initial file types:
+
+* PDF
+* TXT
+* DOCX
+* CSV
+* XLSX
+* JSON
+
+Do not execute uploaded files.
+
+TOOLS API:
+
+Create:
+
+GET /api/v1/tools
+
+Return the tools currently available to Quantora.
+
+Initially define:
+
+* calculator
+* text_summarizer
+* document_reader
+
+Implement the calculator safely.
+
+Do not use Python eval directly on untrusted user input.
+
+Create a tool service abstraction so more tools can be added later.
+
+ERROR HANDLING:
+
+Create consistent API error responses.
+
+Example:
+
+{
+"success": false,
+"error": {
+"code": "ERROR_CODE",
+"message": "Human readable message"
+}
+}
+
+Handle:
+
+* validation errors
+* authentication errors
+* missing resources
+* invalid files
+* AI service errors
+* unexpected server errors
+
+Do not expose stack traces to clients in production mode.
+
+LOGGING:
+
+Configure Python logging.
+
+Log:
+
+* application startup
+* application shutdown
+* API requests at an appropriate level
+* errors
+* AI service failures
+
+Never log:
+
+* passwords
+* JWT secrets
+* API keys
+* sensitive authentication data
+
+SECURITY:
+
+Implement:
+
+* CORS
+* JWT authentication
+* password hashing
+* input validation
+* file validation
+* file size limits
+* safe filename handling
+* no arbitrary code execution
+* no eval for user expressions
+* environment-based secrets
+
+DOCUMENTATION:
+
+FastAPI should automatically provide:
+
+/docs
+/redoc
+/openapi.json
+
+Add useful endpoint summaries and descriptions.
+
+TESTING:
+
+Create pytest tests for:
+
+1. Health endpoint
+2. Readiness endpoint
+3. User registration
+4. User login
+5. Authenticated /me endpoint
+6. Chat endpoint behavior
+7. Agent listing
+8. Agent execution
+9. File validation
+10. Tools endpoint
+
+Tests must not require a database.
+
+README:
+
+Create a complete README.md containing:
+
+* Quantora AI Backend
+* Project overview
+* Architecture
+* Technologies
+* Folder structure
+* Installation
+* Virtual environment setup
+* Environment variables
+* Running locally
+* Running tests
+* API documentation
+* Frontend integration
+* Authentication
+* AI configuration
+* File uploads
+* Future database integration
+
+INSTALLATION:
+
+requirements.txt must contain all required packages.
+
+Create commands for Windows users using:
+
+python -m venv .venv
+
+.venv\Scripts\activate
+
+python -m pip install --upgrade pip
+
+pip install -r requirements.txt
+
+RUNNING:
+
+Support:
+
+python run.py
+
+and:
+
+uvicorn app.main:app --reload
+
+Make sure both methods work.
+
+GITIGNORE:
+
+Include:
+
+.venv/
+**pycache**/
+*.pyc
+.env
+uploads/*
+!uploads/.gitkeep
+.pytest_cache/
+.coverage
+.vscode/
+
+IMPORTANT DATABASE RULE:
+
+There must be NO database implementation in this project.
+
+Do not create:
+
+* PostgreSQL connection
+* Supabase connection
+* SQLAlchemy models
+* SQLModel models
+* database migrations
+* database tables
+* database repositories connected to a database
+* DATABASE_URL
+
+Instead, create clean interfaces/placeholders where database functionality will eventually be connected.
+
+FUTURE DATABASE ARCHITECTURE:
+
+The backend should eventually be able to replace:
+
+InMemoryUserStore
+InMemoryConversationStore
+
+with:
+
+PostgreSQL/Supabase repositories
+
+without changing the API routes.
+
+QUALITY REQUIREMENTS:
+
+* Use type hints.
+* Use clean naming.
+* Avoid duplicated code.
+* Separate routes, schemas, services and configuration.
+* Add docstrings where useful.
+* Do not create unnecessary files.
+* Do not install unnecessary packages.
+* Do not modify the frontend.
+* Do not create a database.
+* Do not use mock AI responses when an AI API is configured.
+* If the AI API is not configured, return a clear configuration error rather than pretending an AI response was generated.
+
+FINAL STEP:
+
+After creating all files:
+
+1. Inspect the entire backend project.
+2. Check imports.
+3. Check for circular imports.
+4. Check Pydantic compatibility.
+5. Check FastAPI compatibility.
+6. Check authentication flow.
+7. Check CORS.
+8. Check file upload validation.
+9. Check that no database package or database connection exists.
+10. Run the test suite.
+11. Fix all errors.
+12. Run the application.
+13. Verify /api/v1/health.
+14. Verify /docs.
+15. Provide me with:
+
+* the final folder structure
+* installation commands
+* environment setup commands
+* run commands
+* test command
+* API endpoint list
+* any configuration I still need to provide
+
+Do not stop after creating only the initial files. Complete the backend implementation and verify it.
