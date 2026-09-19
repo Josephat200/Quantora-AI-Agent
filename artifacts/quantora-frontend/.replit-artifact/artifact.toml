@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "QUANTORA Frontend"
+description = "A frontend-only AI assistant interface for QUANTORA with a branded landing page, authentication screens, conversations, file intelligence, and account settings."
+version = "1.0.0"
+id = "artifacts/quantora-frontend"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 21995
+
+[services.development]
+run = "pnpm --filter @workspace/quantora-frontend run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/quantora-frontend", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/quantora-frontend/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "21995"
+BASE_PATH = "/"
