@@ -19,8 +19,9 @@ router.post("/v1/chat", requireAuth, async (req: AuthenticatedRequest, res) => {
   const conversation: Conversation = existing?.userId === req.user!.id ? existing : { id: newId(), userId: req.user!.id, title: message.slice(0, 60), messages: [], updatedAt: now };
   const userMessage = { id: newId(), role: "user" as const, content: message, createdAt: now };
   conversation.messages.push(userMessage);
+  const agentType = typeof req.body?.agent_type === "string" ? req.body.agent_type : "general";
   try {
-    const answer = await generateResponse(message, conversation.messages.slice(-10, -1).map(({ role, content }) => ({ role, content })));
+    const answer = await generateResponse(message, conversation.messages.slice(-10, -1).map(({ role, content }) => ({ role, content })), agentType);
     conversation.messages.push({ id: newId(), role: "assistant", content: answer, createdAt: new Date().toISOString() });
     conversation.updatedAt = new Date().toISOString();
     conversations.set(conversation.id, conversation);

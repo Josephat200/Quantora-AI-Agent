@@ -28,7 +28,7 @@ export const api = {
     request<AuthResponse>("/auth/login", { method: "POST", body: JSON.stringify(payload) }),
   me: () => request<ApiUser>("/auth/me"),
   conversations: () => request<ApiConversation[]>("/chat/conversations"),
-  sendMessage: (payload: { message: string; conversation_id?: string }) =>
+  sendMessage: (payload: { message: string; conversation_id?: string; agent_type?: string }) =>
     request<{ message: string; conversation_id: string; model: string }>("/chat", { method: "POST", body: JSON.stringify(payload) }),
   upload: (file: File) => {
     const body = new FormData();
